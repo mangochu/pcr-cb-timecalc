@@ -5,7 +5,16 @@ export const FULL_TIME = 90
 // 也接受區間 "0:18-17"、"0:18~0:17"（第 4～6 組是區間的分隔符號、分、秒）
 export const TIME_LINE_RE = /^(\s*)(\d{1,2})[:：](\d{2})(?:([ \t]*[-~～][ \t]*)(?:(\d{1,2})[:：])?(\d{2}))?(?!\d)/
 // 沒有時間、接續上一個時間點的行，例如 ">眞穗>OOXOO"、"→公雪XOOXO"
-export const CONTINUATION_RE = /^\s*(?:[>＞→⇒➡]|->)/
+const CONTINUATION_RE = /^\s*(?:[>＞→⇒➡]|->)/
+// 換行後的操作：行首就是 O/X（"XXXOO"），或 > → 後面直接接 O/X、auto（"涅妃>OOXXO"、"涅妃>auto off"）
+const OPERATION_LINE_RE = /(?:^|[>＞→⇒➡])\s*(?:[OX]{5}(?=$|[^A-Za-z0-9]|[Aa]uto)|[Aa]uto)/
+// 上一行以 > 或 → 結尾，代表這行是被換行切開的後半段（"0:30 可蘿>OOOOO >"）
+const WRAPPED_RE = /[>＞→⇒➡]\s*$/
+
+/** 沒有時間、但屬於上一個時間點的行 */
+export function isContinuationLine(line: string, prevLine = ''): boolean {
+  return CONTINUATION_RE.test(line) || WRAPPED_RE.test(prevLine) || OPERATION_LINE_RE.test(line)
+}
 
 /** 解析 "0:59"、"0：59" 或 "59" 為秒數，格式不對時回傳 null */
 export function parseTime(text: string): number | null {
@@ -48,7 +57,8 @@ export function convertTimeline(input: string, { remaining, keepZero = false }: 
   let kept = 0
   let dropped = 0
 
-  for (const line of input.split(/\r?\n/)) {
+  const lines = input.split(/\r?\n/)
+  for (const [i, line] of lines.entries()) {
     const m = line.match(TIME_LINE_RE)
     if (m && Number(m[3]) < 60) {
       const t = Number(m[2]) * 60 + Number(m[3]) - offset
@@ -71,7 +81,7 @@ export function convertTimeline(input: string, { remaining, keepZero = false }: 
         }
       }
       out.push(m[1] + formatTime(t) + range + line.slice(m[0].length))
-    } else if (CONTINUATION_RE.test(line)) {
+    } else if (isContinuationLine(line, lines[i - 1])) {
       if (!dropping) out.push(line)
     } else {
       dropping = false

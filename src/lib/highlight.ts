@@ -1,4 +1,4 @@
-import { CONTINUATION_RE, TIME_LINE_RE } from './timeline'
+import { isContinuationLine, TIME_LINE_RE } from './timeline'
 
 export type Token =
   | { type: 'text'; text: string }
@@ -23,7 +23,7 @@ export function highlightTimeline(text: string): Token[][] {
   let prev: string | null = null
   let prevAuto: string | null = null
 
-  return text.split(/\r?\n/).map((line) => {
+  return text.split(/\r?\n/).map((line, i, lines) => {
     const tokens: Token[] = []
     let rest = line
 
@@ -35,7 +35,7 @@ export function highlightTimeline(text: string): Token[][] {
       rest = line.slice(m[0].length)
     }
 
-    if (!isTimeLine && !CONTINUATION_RE.test(line)) {
+    if (!isTimeLine && !isContinuationLine(line, lines[i - 1])) {
       if (rest) tokens.push({ type: 'text', text: rest })
       return tokens
     }

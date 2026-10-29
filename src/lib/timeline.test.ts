@@ -87,6 +87,29 @@ describe('convertTimeline', () => {
     expect(convertTimeline('1:05-02 A', { remaining: 88 }).text).toBe('1:03-00 A')
   })
 
+  it('drops wrapped operation lines together with their time point', () => {
+    const input = `CR:0/15/15/15/3
+1:30 auto on
+XXXOO
+0:30 可蘿>OOOOO >
+涅妃>OOXXO auto off
+0:25 真步>OOXOO
+0:18 真步>auto on
+涅妃>auto off>真步
+>OOXXO >碧>OOOOO
+0:09 碧>OXOXO auto on
+全自動打法: OOXOX
+傷害約3.4億`
+    // 扣 30 秒：0:30、0:25 以下全部來不及
+    expect(convertTimeline(input, { remaining: 60 }).text).toBe(`CR:0/15/15/15/3
+1:00 auto on
+XXXOO
+全自動打法: OOXOX
+傷害約3.4億`)
+    // 扣 10 秒：0:18 → 0:08 保留，連同換行的兩行
+    expect(convertTimeline(input, { remaining: 80 }).text).toContain('0:08 真步>auto on\n涅妃>auto off>真步\n>OOXXO >碧>OOOOO')
+  })
+
   it('handles 0:00 according to keepZero', () => {
     const input = '0:34 A>OOOOO\n>B>XXXXX'
     expect(convertTimeline(input, { remaining: 56 }).text).toBe('')

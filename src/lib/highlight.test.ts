@@ -61,6 +61,33 @@ describe('highlightTimeline', () => {
     ])
   })
 
+  it('treats wrapped lines as operations of the previous time point', () => {
+    const text = `CR:0/15/15/15/3
+1:30 auto on
+XXXOO
+1:10 可蘿>XOXOX
+0:30 可蘿>OOOOO >
+涅妃>OOXXO auto off
+0:18 真步>auto on
+涅妃>auto off>真步
+>OOXXO >碧>OOOOO
+全自動打法: OOXOX
+傷害約3.4億`
+    expect(show(highlightTimeline(text))).toEqual([
+      'CR:0/15/15/15/3',
+      '[1:30] auto *on*',
+      'XXXOO',
+      '[1:10] 可蘿>X*O*XO*X*',
+      '[0:30] 可蘿>*O*O*O*O*O* >',
+      '涅妃>OO*X**X*O auto *off*',
+      '[0:18] 真步>auto *on*',
+      '涅妃>auto *off*>真步',
+      '>OOXXO >碧>OO*O**O*O',
+      '全自動打法: OOXOX',
+      '傷害約3.4億',
+    ])
+  })
+
   it('handles ranges, → continuation and O/X glued to Auto', () => {
     const text = `0:18-17 涅妃 → OXXOOAuto off
 →公雪 OXXOX`
