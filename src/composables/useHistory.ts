@@ -26,13 +26,19 @@ export function useHistory() {
     return entries.value.find((e) => e.input === input)?.title
   }
 
-  /** 沒給標題時沿用同一份時間軸存過的標題，避免複製時把自訂標題蓋掉 */
+  /**
+   * 沒給標題時沿用同一份時間軸存過的標題，避免複製時把自訂標題蓋掉。
+   * 同一份時間軸＋同樣秒數已經存過就原地更新，保留使用者排好的順序；新的放最上面
+   */
   function save({ title, ...entry }: NewEntry) {
-    // 同一份時間軸＋同樣秒數只留最新的一筆
-    const isSame = (e: HistoryEntry) => e.input === entry.input && e.remaining === entry.remaining
-    const rest = entries.value.filter((e) => !isSame(e))
     const resolvedTitle = title ?? findTitle(entry.input) ?? defaultTitle(entry.input)
-    entries.value = [{ ...entry, title: resolvedTitle, id: crypto.randomUUID(), savedAt: Date.now() }, ...rest].slice(0, MAX_ENTRIES)
+    const index = entries.value.findIndex((e) => e.input === entry.input && e.remaining === entry.remaining)
+    const saved = { ...entry, title: resolvedTitle, savedAt: Date.now() }
+    if (index >= 0) {
+      entries.value = entries.value.map((e, i) => (i === index ? { ...saved, id: e.id } : e))
+    } else {
+      entries.value = [{ ...saved, id: crypto.randomUUID() }, ...entries.value].slice(0, MAX_ENTRIES)
+    }
   }
 
   function remove(id: string) {

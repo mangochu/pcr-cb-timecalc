@@ -24,6 +24,7 @@ const colorOps = useStorage('colorOps', true)
 // 手機版第一次打開從換算結果開始，之後記住上次的選擇
 const mobileView = useStorage<MobileView>('mobileView', 'output')
 const history = useHistory()
+const historyEntries = history.entries
 const toast = ref('')
 const saveDialog = ref<HTMLDialogElement>()
 const saveTitleInput = ref<HTMLInputElement>()
@@ -212,7 +213,7 @@ function scrollToOcr() {
     </section>
 
     <OcrPanel ref="ocrPanel" v-model:state="ocrState" @text="onOcrText" />
-    <HistoryPanel :entries="history.entries.value" @load="loadEntry" @remove="history.remove" @clear="history.clear" />
+    <HistoryPanel v-model:entries="historyEntries" @load="loadEntry" @remove="history.remove" @clear="history.clear" />
   </main>
 
   <dialog ref="saveDialog" class="dialog" aria-labelledby="save-dialog-title">

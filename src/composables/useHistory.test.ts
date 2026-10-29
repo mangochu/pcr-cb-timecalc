@@ -22,6 +22,25 @@ describe('useHistory', () => {
     expect(history.findTitle(entry(0).input)).toBe('五王 狂暴')
   })
 
+  it('updates an existing entry in place to keep the manual order', () => {
+    const history = useHistory()
+    history.clear()
+    history.save({ remaining: 59, input: 'A', output: '' })
+    history.save({ remaining: 59, input: 'B', output: '' })
+    history.save({ remaining: 59, input: 'C', output: '' })
+    // 手動排成 A, C, B
+    const [c, b, a] = history.entries.value
+    history.entries.value = [a, c, b]
+
+    history.save({ remaining: 59, input: 'C', output: 'new' })
+    expect(history.entries.value.map((e) => e.input)).toEqual(['A', 'C', 'B'])
+    expect(history.entries.value[1]).toMatchObject({ id: c.id, output: 'new' })
+
+    // 新的放最上面
+    history.save({ remaining: 59, input: 'D', output: '' })
+    expect(history.entries.value.map((e) => e.input)).toEqual(['D', 'A', 'C', 'B'])
+  })
+
   it('falls back to the first line for a new timeline', () => {
     const history = useHistory()
     history.clear()
