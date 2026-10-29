@@ -9,15 +9,30 @@ export interface HistoryEntry {
   output: string
 }
 
+type NewEntry = Omit<HistoryEntry, 'id' | 'savedAt' | 'title'> & { title?: string }
+
 const MAX_ENTRIES = 30
+
+/** 沒填標題時用時間軸的第一行 */
+export function defaultTitle(input: string): string {
+  return (input.split(/\r?\n/).find((l) => l.trim()) ?? '').trim().slice(0, 40)
+}
 
 export function useHistory() {
   const entries = useStorage<HistoryEntry[]>('history', [])
 
-  function save(entry: Omit<HistoryEntry, 'id' | 'savedAt'>) {
+  /** 同一份時間軸存過的標題（不管秒數），用來預填 */
+  function findTitle(input: string): string | undefined {
+    return entries.value.find((e) => e.input === input)?.title
+  }
+
+  /** 沒給標題時沿用同一份時間軸存過的標題，避免複製時把自訂標題蓋掉 */
+  function save({ title, ...entry }: NewEntry) {
     // 同一份時間軸＋同樣秒數只留最新的一筆
-    const rest = entries.value.filter((e) => !(e.input === entry.input && e.remaining === entry.remaining))
-    entries.value = [{ ...entry, id: crypto.randomUUID(), savedAt: Date.now() }, ...rest].slice(0, MAX_ENTRIES)
+    const isSame = (e: HistoryEntry) => e.input === entry.input && e.remaining === entry.remaining
+    const rest = entries.value.filter((e) => !isSame(e))
+    const resolvedTitle = title ?? findTitle(entry.input) ?? defaultTitle(entry.input)
+    entries.value = [{ ...entry, title: resolvedTitle, id: crypto.randomUUID(), savedAt: Date.now() }, ...rest].slice(0, MAX_ENTRIES)
   }
 
   function remove(id: string) {
@@ -28,5 +43,5 @@ export function useHistory() {
     entries.value = []
   }
 
-  return { entries, save, remove, clear }
+  return { entries, findTitle, save, remove, clear }
 }

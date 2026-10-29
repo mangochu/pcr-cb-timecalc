@@ -192,6 +192,107 @@ select {
   width: 100%;
 }
 
+/* 秒數拉軸 */
+.slider-field {
+  flex: 1 1 260px;
+  display: grid;
+  gap: 2px;
+  padding-bottom: 4px;
+}
+
+.time-slider {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  accent-color: var(--accent);
+  height: 28px;
+  cursor: pointer;
+}
+
+.slider-scale {
+  position: relative;
+  height: 1.2em;
+  /* 刻度對齊拉桿把手的中心（把手約 16px 寬） */
+  margin: 0 8px;
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+.slider-scale span {
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+/* 手機版：完整時間軸／換算結果／比對 切換 */
+.view-toggle {
+  display: none;
+}
+
+.view-toggle button {
+  flex: 1;
+  border-radius: 0;
+  padding: 8px 4px;
+}
+
+.view-toggle button:first-child {
+  border-radius: 8px 0 0 8px;
+}
+
+.view-toggle button:last-child {
+  border-radius: 0 8px 8px 0;
+}
+
+.view-toggle button + button {
+  margin-left: -1px;
+}
+
+.view-toggle button[aria-pressed='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+  position: relative;
+}
+
+@media (max-width: 760px) {
+  .view-toggle {
+    display: flex;
+  }
+
+  .editors[data-view='input'] .editor-output,
+  .editors[data-view='output'] .editor-input {
+    display: none;
+  }
+}
+
+/* 存紀錄對話框 */
+.dialog {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  padding: 20px;
+  width: min(420px, calc(100vw - 32px));
+}
+
+.dialog::backdrop {
+  background: rgb(0 0 0 / 0.45);
+}
+
+.dialog form {
+  display: grid;
+  gap: 16px;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .offset-hint {
   margin: 0;
   padding-bottom: 8px;
