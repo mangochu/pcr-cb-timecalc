@@ -268,6 +268,36 @@ select {
   }
 }
 
+/* OCR 尚未套用提醒 */
+.ocr-banner {
+  position: sticky;
+  top: 8px;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  border: 1px solid var(--warn-border);
+  background: var(--warn-bg);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.08);
+}
+
+.ocr-banner-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pending-hint {
+  align-self: center;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
 /* 存紀錄對話框 */
 .dialog {
   border: 1px solid var(--border);

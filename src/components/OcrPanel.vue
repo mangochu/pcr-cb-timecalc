@@ -1,17 +1,22 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watchEffect } from 'vue'
 import { useOcr } from '../ocr/useOcr'
-import { MODEL_TIERS, type ModelTier } from '../ocr/protocol'
+import { MODEL_TIERS, type ModelTier, type OcrPanelState } from '../ocr/protocol'
 import { findSuspiciousLines, normalizeOcrText } from '../lib/ocrNormalize'
 import { useStorage } from '../composables/useStorage'
 
 const emit = defineEmits<{ text: [text: string, mode: 'replace' | 'append'] }>()
+/** 讓上層顯示「尚未套用」的提醒 */
+const state = defineModel<OcrPanelState>('state', { default: 'idle' })
 
 const { status, recognize } = useOcr()
 const tier = useStorage<ModelTier>('ocrTier', 'small')
 const normalize = useStorage('ocrNormalize', true)
+const autoApply = useStorage('ocrAutoApply', false)
 const rawText = ref('')
 const editedText = ref<string | null>(null)
+/** 最後一次套用到完整時間軸的內容，跟目前結果不同就代表還沒套用 */
+const appliedText = ref<string | null>(null)
 const previews = ref<string[]>([])
 const error = ref('')
 const progress = ref({ done: 0, total: 0 })
@@ -24,6 +29,20 @@ const text = computed({
   set: (v: string) => (editedText.value = v),
 })
 const suspicious = computed(() => findSuspiciousLines(text.value))
+const pending = computed(() => text.value.trim() !== '' && text.value !== appliedText.value)
+
+watchEffect(() => {
+  if (busy.value) state.value = autoApply.value ? 'recognizing-auto' : 'recognizing'
+  else state.value = pending.value ? 'pending' : 'idle'
+})
+
+function apply(mode: 'replace' | 'append') {
+  if (!text.value.trim()) return
+  emit('text', text.value, mode)
+  appliedText.value = text.value
+}
+
+defineExpose({ apply })
 const statusText = computed(() => {
   if (!busy.value) return ''
   const n = `（${progress.value.done + 1}/${progress.value.total}）`
@@ -38,6 +57,7 @@ async function run(files: File[]) {
   previews.value = images.map((f) => URL.createObjectURL(f))
   rawText.value = ''
   editedText.value = null
+  appliedText.value = null
   error.value = ''
   progress.value = { done: 0, total: images.length }
 
@@ -51,6 +71,7 @@ async function run(files: File[]) {
     }
     progress.value.done++
   }
+  if (autoApply.value) apply('replace')
 }
 
 function onFiles(event: Event) {
@@ -80,7 +101,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="panel" aria-labelledby="ocr-title">
+  <section id="ocr-panel" class="panel" aria-labelledby="ocr-title">
     <div class="panel-head">
       <h2 id="ocr-title">截圖轉文字（OCR）</h2>
       <span class="panel-options">
@@ -93,6 +114,10 @@ onBeforeUnmount(() => {
         <label class="checkbox">
           <input v-model="normalize" type="checkbox" @change="editedText = null" />
           自動修正 O/X、時間格式
+        </label>
+        <label class="checkbox">
+          <input v-model="autoApply" type="checkbox" />
+          辨識完自動套用到完整時間軸
         </label>
       </span>
     </div>
@@ -121,7 +146,7 @@ onBeforeUnmount(() => {
         <img v-for="src in previews" :key="src" :src="src" alt="上傳的截圖" />
       </div>
       <div class="ocr-text">
-        <textarea v-model="text" spellcheck="false" placeholder="辨識結果會出現在這裡，可以先手動修正再放入左側" />
+        <textarea v-model="text" spellcheck="false" placeholder="辨識結果會出現在這裡，可以先手動修正再套用到完整時間軸" />
         <div v-if="suspicious.length" class="warning" role="note">
           <p>以下幾行的 O/X 不是 5 個，可能有字沒認到，請對照截圖修正：</p>
           <ul>
@@ -131,8 +156,9 @@ onBeforeUnmount(() => {
           </ul>
         </div>
         <span class="actions">
-          <button type="button" class="ghost" :disabled="!text.trim()" @click="emit('text', text, 'append')">附加到左側</button>
-          <button type="button" class="primary" :disabled="!text.trim()" @click="emit('text', text, 'replace')">取代左側內容</button>
+          <span v-if="pending && !busy" class="pending-hint">尚未套用</span>
+          <button type="button" class="ghost" :disabled="!text.trim()" @click="apply('append')">附加到完整時間軸</button>
+          <button type="button" class="primary" :disabled="!text.trim()" @click="apply('replace')">取代完整時間軸</button>
         </span>
       </div>
     </div>

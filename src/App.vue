@@ -6,6 +6,7 @@ import { convertTimeline, formatTime, parseTime, FULL_TIME } from './lib/timelin
 import OcrPanel from './components/OcrPanel.vue'
 import HistoryPanel from './components/HistoryPanel.vue'
 import HighlightedTimeline from './components/HighlightedTimeline.vue'
+import type { OcrPanelState } from './ocr/protocol'
 
 type MobileView = 'input' | 'output' | 'both'
 const MOBILE_VIEWS: { value: MobileView; label: string }[] = [
@@ -18,12 +19,15 @@ const SLIDER_TICKS = [1, 30, 60, 90]
 const remainingText = useStorage('remaining', '1:30')
 const input = useStorage('draft', '')
 const keepZero = useStorage('keepZero', false)
-const mobileView = useStorage<MobileView>('mobileView', 'input')
+// 手機版第一次打開從換算結果開始，之後記住上次的選擇
+const mobileView = useStorage<MobileView>('mobileView', 'output')
 const history = useHistory()
 const toast = ref('')
 const saveDialog = ref<HTMLDialogElement>()
 const saveTitleInput = ref<HTMLInputElement>()
 const saveTitle = ref('')
+const ocrPanel = ref<InstanceType<typeof OcrPanel>>()
+const ocrState = ref<OcrPanelState>('idle')
 
 const remaining = computed(() => {
   const sec = parseTime(remainingText.value)
@@ -64,7 +68,7 @@ async function copyResult() {
     saveToHistory()
     showToast('已複製，並存入紀錄')
   } catch {
-    showToast('複製失敗，請手動選取右側文字')
+    showToast('複製失敗，請手動選取換算結果的文字')
   }
 }
 
@@ -89,6 +93,11 @@ function loadEntry(entry: HistoryEntry) {
 
 function onOcrText(text: string, mode: 'replace' | 'append') {
   input.value = mode === 'append' && input.value.trim() ? `${input.value.trimEnd()}\n${text}` : text
+  showToast(mode === 'append' ? '已把辨識結果附加到完整時間軸' : '已用辨識結果取代完整時間軸')
+}
+
+function scrollToOcr() {
+  document.getElementById('ocr-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 </script>
 
@@ -144,6 +153,22 @@ function onOcrText(text: string, mode: 'replace' | 'append') {
       </label>
     </section>
 
+    <div v-if="ocrState !== 'idle'" class="ocr-banner" role="status">
+      <span class="ocr-banner-text">
+        <template v-if="ocrState === 'pending'">截圖辨識結果<strong>尚未套用</strong>到完整時間軸</template>
+        <template v-else>
+          <span class="spinner" aria-hidden="true" />
+          截圖辨識中…{{ ocrState === 'recognizing-auto' ? '完成後會自動套用到完整時間軸' : '完成後記得套用到完整時間軸' }}
+        </template>
+      </span>
+      <span class="actions">
+        <button type="button" class="ghost" @click="scrollToOcr">查看辨識結果</button>
+        <button v-if="ocrState === 'pending'" type="button" class="primary" @click="ocrPanel?.apply('replace')">
+          取代完整時間軸
+        </button>
+      </span>
+    </div>
+
     <div class="view-toggle" role="group" aria-label="切換顯示">
       <button
         v-for="v in MOBILE_VIEWS"
@@ -176,7 +201,7 @@ function onOcrText(text: string, mode: 'replace' | 'append') {
       </div>
     </section>
 
-    <OcrPanel @text="onOcrText" />
+    <OcrPanel ref="ocrPanel" v-model:state="ocrState" @text="onOcrText" />
     <HistoryPanel :entries="history.entries.value" @load="loadEntry" @remove="history.remove" @clear="history.clear" />
   </main>
 

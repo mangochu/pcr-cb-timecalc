@@ -6,6 +6,9 @@ export const MODEL_TIERS: { value: ModelTier; label: string }[] = [
   { value: 'medium', label: '高精準（約 140 MB）' },
 ]
 
+/** OCR 區塊的狀態：辨識中（是否會自動套用）、辨識完但還沒套用到完整時間軸 */
+export type OcrPanelState = 'idle' | 'recognizing' | 'recognizing-auto' | 'pending'
+
 export interface OcrRequest {
   id: number
   tier: ModelTier
