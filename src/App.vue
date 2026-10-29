@@ -10,7 +10,7 @@ import type { OcrPanelState } from './ocr/protocol'
 
 type MobileView = 'input' | 'output' | 'both'
 const MOBILE_VIEWS: { value: MobileView; label: string }[] = [
-  { value: 'input', label: '完整時間軸' },
+  { value: 'input', label: '編輯時間軸' },
   { value: 'output', label: '換算結果' },
   { value: 'both', label: '比對' },
 ]
