@@ -31,7 +31,8 @@ async function move(index: number, delta: number) {
   <section class="panel" aria-labelledby="history-title">
     <div class="panel-head">
       <h2 id="history-title">近期紀錄</h2>
-      <button v-if="entries.length" type="button" class="ghost" @click="confirmClear">全部清除</button>
+      <!-- 收合抽屜的按鈕 -->
+      <slot name="actions" />
     </div>
     <p v-if="!entries.length" class="muted">還沒有紀錄。按「複製」或「存紀錄」後會保存在這台裝置的瀏覽器裡（最多 30 筆）。</p>
     <VueDraggable
@@ -65,5 +66,7 @@ async function move(index: number, delta: number) {
         <button type="button" class="ghost icon" :aria-label="`刪除 ${e.title}`" @click="emit('remove', e.id)">✕</button>
       </li>
     </VueDraggable>
+    <!-- 放在最下面、跟常用按鈕分開，避免誤觸 -->
+    <button v-if="entries.length" type="button" class="danger clear-all" @click="confirmClear">全部清除</button>
   </section>
 </template>

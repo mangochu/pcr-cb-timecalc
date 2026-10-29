@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useStorage } from './composables/useStorage'
 import { defaultTitle, useHistory, type HistoryEntry } from './composables/useHistory'
 import { convertTimeline, formatTime, parseTime, FULL_TIME } from './lib/timeline'
@@ -31,6 +31,22 @@ const saveTitleInput = ref<HTMLInputElement>()
 const saveTitle = ref('')
 const ocrPanel = ref<InstanceType<typeof OcrPanel>>()
 const ocrState = ref<OcrPanelState>('idle')
+
+// 近期紀錄：從左邊滑出的抽屜
+const drawerOpen = ref(false)
+const drawerClose = ref<HTMLButtonElement>()
+
+async function openDrawer() {
+  drawerOpen.value = true
+  await nextTick()
+  drawerClose.value?.focus()
+}
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape' && drawerOpen.value) drawerOpen.value = false
+}
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 
 const remaining = computed(() => {
   const sec = parseTime(remainingText.value)
@@ -91,6 +107,7 @@ function confirmSave() {
 function loadEntry(entry: HistoryEntry) {
   input.value = entry.input
   remainingText.value = formatTime(entry.remaining)
+  drawerOpen.value = false
   showToast('已載入紀錄')
 }
 
@@ -105,9 +122,46 @@ function scrollToOcr() {
 </script>
 
 <template>
+  <aside class="drawer" :class="{ open: drawerOpen }" aria-label="近期紀錄" :inert="!drawerOpen ? true : undefined">
+    <HistoryPanel v-model:entries="historyEntries" @load="loadEntry" @remove="history.remove" @clear="history.clear">
+      <template #actions>
+        <button
+          ref="drawerClose"
+          type="button"
+          class="ghost icon"
+          aria-label="關閉近期紀錄"
+          title="關閉"
+          @click="drawerOpen = false"
+        >
+          <!-- <-| 收合圖示，跟紀錄的刪除 ✕ 區分 -->
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+            <path
+              d="M11 8H2.5M6 4.5L2.5 8 6 11.5M13.5 3v10"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.6"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </template>
+    </HistoryPanel>
+  </aside>
+  <div v-if="drawerOpen" class="drawer-backdrop" aria-hidden="true" @click="drawerOpen = false" />
+
   <header class="site-header">
-    <h1>補償刀時間軸換算</h1>
-    <p class="subtitle">貼上完整 1:30 的時間軸，填入補償刀秒數，自動扣秒並刪掉來不及操作的軸。</p>
+    <div>
+      <h1>補償刀時間軸換算</h1>
+      <p class="subtitle">貼上完整 1:30 的時間軸，填入補償刀秒數，自動扣秒並刪掉來不及操作的軸。</p>
+    </div>
+    <button type="button" class="history-open" :aria-expanded="drawerOpen" @click="openDrawer">
+      <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+        <path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+      </svg>
+      近期紀錄
+      <span v-if="historyEntries.length" class="badge">{{ historyEntries.length }}</span>
+    </button>
   </header>
 
   <main>
@@ -213,7 +267,6 @@ function scrollToOcr() {
     </section>
 
     <OcrPanel ref="ocrPanel" v-model:state="ocrState" @text="onOcrText" />
-    <HistoryPanel v-model:entries="historyEntries" @load="loadEntry" @remove="history.remove" @clear="history.clear" />
   </main>
 
   <dialog ref="saveDialog" class="dialog" aria-labelledby="save-dialog-title">
