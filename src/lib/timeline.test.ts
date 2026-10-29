@@ -188,6 +188,20 @@ describe('real OCR sample with arrows and Auto', () => {
   })
 })
 
+describe('auto misreads', () => {
+  it('fixes OCR-mangled Auto', () => {
+    expect(normalizeOcrText('1:30 OOXOO Auío off')).toBe('1:30 OOXOO Auto off')
+    expect(normalizeOcrText('0:55 章魚 → OXXOOAulo on → 聖克 → OOOOO')).toBe('0:55 章魚 → OXXOO Auto on → 聖克 → OOOOO')
+    expect(normalizeOcrText('0:08 作碧 → OXOOO Aut0 0n')).toBe('0:08 作碧 → OXOOO Auto on')
+    expect(normalizeOcrText('0:34 涅妃 → XXXXXautoOFF')).toBe('0:34 涅妃 → XXXXX auto off')
+  })
+
+  it('leaves similar words alone', () => {
+    expect(normalizeOcrText('Alto off')).toBe('Alto off')
+    expect(normalizeOcrText('auto only')).toBe('auto only')
+  })
+})
+
 describe('spacing', () => {
   it('keeps exactly one space between time, name, O/X and auto notes', () => {
     expect(normalizeOcrText('1:30OOXOO auto off')).toBe('1:30 OOXOO auto off')

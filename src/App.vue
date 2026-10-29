@@ -5,6 +5,7 @@ import { useHistory, type HistoryEntry } from './composables/useHistory'
 import { convertTimeline, formatTime, parseTime, FULL_TIME } from './lib/timeline'
 import OcrPanel from './components/OcrPanel.vue'
 import HistoryPanel from './components/HistoryPanel.vue'
+import HighlightedTimeline from './components/HighlightedTimeline.vue'
 
 const remainingText = useStorage('remaining', '1:30')
 const input = useStorage('draft', '')
@@ -126,7 +127,7 @@ function onOcrText(text: string, mode: 'replace' | 'append') {
             <button type="button" class="primary" :disabled="!result || !input.trim()" @click="copyResult">複製</button>
           </span>
         </div>
-        <textarea :value="result?.text ?? ''" readonly spellcheck="false" />
+        <HighlightedTimeline :text="result?.text ?? ''" />
       </div>
     </section>
 

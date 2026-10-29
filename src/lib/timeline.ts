@@ -3,9 +3,9 @@ export const FULL_TIME = 90
 
 // 行首的時間，例如 "1:18 涅妃>OOOOO"；同時接受全形冒號。
 // 也接受區間 "0:18-17"、"0:18~0:17"（第 4～6 組是區間的分隔符號、分、秒）
-const TIME_LINE_RE = /^(\s*)(\d{1,2})[:：](\d{2})(?:([ \t]*[-~～][ \t]*)(?:(\d{1,2})[:：])?(\d{2}))?(?!\d)/
+export const TIME_LINE_RE = /^(\s*)(\d{1,2})[:：](\d{2})(?:([ \t]*[-~～][ \t]*)(?:(\d{1,2})[:：])?(\d{2}))?(?!\d)/
 // 沒有時間、接續上一個時間點的行，例如 ">眞穗>OOXOO"、"→公雪XOOXO"
-const CONTINUATION_RE = /^\s*(?:[>＞→⇒➡]|->)/
+export const CONTINUATION_RE = /^\s*(?:[>＞→⇒➡]|->)/
 
 /** 解析 "0:59"、"0：59" 或 "59" 為秒數，格式不對時回傳 null */
 export function parseTime(text: string): number | null {

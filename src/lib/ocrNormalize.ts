@@ -20,8 +20,9 @@ const TIME_RE = /^(\s*)([0-9OoIl|])\s*[:;：；.．]\s*([0-9OoIl|]{2})(?![0-9])/
 const COMPACT_TIME_RE = /^(\s*)([01])([0-5]\d)(?![0-9萬万億亿%.])/
 // 時間區間 "0:18 -17"、"0:18～0:17"，整理成 "0:18-17"
 const TIME_RANGE_RE = /^(\s*\d{1,2}:\d{2})[ \t]*[-~～][ \t]*(\d{1,2}:\d{2}|\d{2})(?!\d)/
-// auto on/off 中間被認成句點或黏在一起："Auto.on"、"autoon"
-const AUTO_RE = /([Aa]uto)[ \t.。．·・,，]*(on|off|ON|OFF)(?![A-Za-z])/g
+// auto on/off：容許 OCR 把 Auto 認錯（"Auío"、"Aulo"、"Aut0"），
+// 以及中間被認成句點或黏在一起（"Auto.on"、"autoon"）
+const AUTO_RE = /([Aa])[uUüvV][tTlLíìiI1|f][oO0öó][ \t.。．·・,，]*([oO0][nN]|[oO0][fF]{2})(?![A-Za-z])/g
 // 行中間當分隔用的箭頭，前後統一一個空格；行首的接續箭頭不動
 const MID_ARROW_RE = /(?<=\S)[ \t]*([→⇒➡])[ \t]*(?=\S)/g
 // 也是一般文字的橫線字元，緊貼著文字時當成名字或說明的一部分（例如名字結尾是「一」）
@@ -90,7 +91,6 @@ function convertSymbols(body: string, prev: string): string {
 function tidySpacing(s: string): string {
   return s
     .replace(LEADING_TIME_RE, '$1$2 ')
-    .replace(AUTO_RE, '$1 $2')
     .replace(MID_ARROW_RE, ' $1 ')
     .replace(OX_SPACING_RE, (match: string, run: string, offset: number, whole: string) => {
       const prev = whole[offset - 1]
@@ -101,8 +101,13 @@ function tidySpacing(s: string): string {
     })
 }
 
+function fixAuto(s: string): string {
+  return s.replace(AUTO_RE, (_, a: string, state: string) => `${a}uto ${state.toLowerCase().replace('0', 'o')}`)
+}
+
 function normalizeLine(line: string): string {
-  const s = fixTime(toHalfWidth(line).trimEnd()).replace(SYMBOL_RUN_RE, (run: string, offset: number, whole: string) => {
+  // auto 要先修好，O/X 才認得出黏在後面的 "OXXOOAulo on"
+  const s = fixAuto(fixTime(toHalfWidth(line).trimEnd())).replace(SYMBOL_RUN_RE, (run: string, offset: number, whole: string) => {
     const { head, body, tail, prev } = splitRun(run, offset, whole)
     return head + convertSymbols(body, prev) + tail
   })

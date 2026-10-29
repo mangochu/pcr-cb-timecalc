@@ -11,6 +11,8 @@
   --danger: #c92a2a;
   --warn-bg: #fff4db;
   --warn-border: #f0c36d;
+  --time: #1971c2;
+  --changed: #e03131;
   --radius: 10px;
   --mono: ui-monospace, 'Cascadia Mono', 'Consolas', 'Noto Sans Mono CJK TC', monospace;
   color-scheme: light dark;
@@ -30,6 +32,8 @@
     --danger: #ff8787;
     --warn-bg: #3a2f17;
     --warn-border: #7a5d1e;
+    --time: #74c0fc;
+    --changed: #ff6b6b;
   }
 }
 
@@ -256,8 +260,30 @@ textarea {
   tab-size: 2;
 }
 
-textarea[readonly] {
+/* 換算結果：跟 textarea 同樣外觀，但可以上色 */
+.timeline-view {
+  min-height: 460px;
+  max-height: 80vh;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
   background: var(--surface-2);
+  padding: 12px 14px;
+  font-family: var(--mono);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.tl-time {
+  color: var(--time);
+  font-weight: 700;
+}
+
+.tl-changed {
+  color: var(--changed);
+  font-weight: 700;
 }
 
 @media (max-width: 760px) {
@@ -265,7 +291,8 @@ textarea[readonly] {
     grid-template-columns: 1fr;
   }
 
-  textarea {
+  textarea,
+  .timeline-view {
     min-height: 300px;
   }
 }
