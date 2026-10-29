@@ -49,8 +49,10 @@ export function highlightTimeline(text: string): Token[][] {
         tokens.push({ type: 'ox', text: ox, changed: [...ox].map((c, i) => before !== null && c !== before[i]) })
         prev = ox
       } else {
+        // 只有 on/off 本身上色，"Auto " 當一般文字
         const state = auto.toLowerCase()
-        tokens.push({ type: 'auto', text: match, changed: state !== prevAuto })
+        tokens.push({ type: 'text', text: match.slice(0, -auto.length) })
+        tokens.push({ type: 'auto', text: auto, changed: state !== prevAuto })
         prevAuto = state
       }
       last = om.index + match.length

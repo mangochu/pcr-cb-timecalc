@@ -26,7 +26,7 @@ describe('highlightTimeline', () => {
 全自動打法:OOXXX`
     expect(show(highlightTimeline(text))).toEqual([
       'CR:15/15/0/15/3',
-      '[1:30] OOXOO *auto off*',
+      '[1:30] OOXOO auto *off*',
       '[1:18] 涅妃>OO*O*OO',
       '>眞穗>OO*X*OO',
       '[0:51] 真穗>OOX*X*O auto off',
@@ -40,7 +40,7 @@ describe('highlightTimeline', () => {
 0:34 涅妃 → OOOOO → 真穗(2nd) → XXXXX Auto on`
     expect(show(highlightTimeline(text))).toEqual([
       '[1:12] 作碧 → OOOOO → 真穗(1st) → OO*X*OO',
-      '[0:34] 涅妃 → OO*O*OO → 真穗(2nd) → *X**X**X**X**X* *Auto on*',
+      '[0:34] 涅妃 → OO*O*OO → 真穗(2nd) → *X**X**X**X**X* Auto *on*',
     ])
   })
 
@@ -52,11 +52,11 @@ describe('highlightTimeline', () => {
 0:51 真穗>OOXXO Auto.off
 全自動打法 auto on`
     expect(show(highlightTimeline(text))).toEqual([
-      '[1:30] OOXOO [*auto off*]',
-      '[1:12] 碧>OO*O*OO *auto on*',
+      '[1:30] OOXOO [auto *off*]',
+      '[1:12] 碧>OO*O*OO auto *on*',
       '[1:06] 真穗>OOOOO',
       '[1:03] 真穗>OO*X*OO autoon',
-      '[0:51] 真穗>OOX*X*O *Auto.off*',
+      '[0:51] 真穗>OOX*X*O Auto.*off*',
       '全自動打法 auto on',
     ])
   })
@@ -64,6 +64,6 @@ describe('highlightTimeline', () => {
   it('handles ranges, → continuation and O/X glued to Auto', () => {
     const text = `0:18-17 涅妃 → OXXOOAuto off
 →公雪 OXXOX`
-    expect(show(highlightTimeline(text))).toEqual(['[0:18-17] 涅妃 → OXXOO*Auto off*', '→公雪 OXXO*X*'])
+    expect(show(highlightTimeline(text))).toEqual(['[0:18-17] 涅妃 → OXXOOAuto *off*', '→公雪 OXXO*X*'])
   })
 })
