@@ -2,13 +2,16 @@
 import { computed } from 'vue'
 import { highlightTimeline } from '../lib/highlight'
 
-const props = defineProps<{ text: string }>()
+const props = withDefaults(defineProps<{ text: string; colorTime?: boolean; colorOps?: boolean }>(), {
+  colorTime: true,
+  colorOps: true,
+})
 
 const lines = computed(() => highlightTimeline(props.text))
 </script>
 
 <template>
-  <div class="timeline-view" tabindex="0" role="textbox" aria-readonly="true" aria-multiline="true" aria-label="換算結果">
+  <div class="timeline-view" :class="{ 'plain-time': !colorTime, 'plain-ops': !colorOps }" tabindex="0" role="textbox" aria-readonly="true" aria-multiline="true" aria-label="換算結果">
     <div v-for="(tokens, i) in lines" :key="i" class="timeline-line">
       <template v-for="(t, j) in tokens" :key="j">
         <span v-if="t.type === 'time'" class="tl-time">{{ t.text }}</span>

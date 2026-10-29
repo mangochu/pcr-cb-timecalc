@@ -417,6 +417,17 @@ textarea {
   font-weight: 700;
 }
 
+.timeline-view.plain-time .tl-time,
+.timeline-view.plain-ops .tl-changed {
+  color: inherit;
+  font-weight: inherit;
+}
+
+.checkbox.compact {
+  padding: 0;
+  margin-right: 4px;
+}
+
 @media (max-width: 760px) {
   .editors {
     grid-template-columns: 1fr;

@@ -19,6 +19,8 @@ const SLIDER_TICKS = [1, 30, 60, 90]
 const remainingText = useStorage('remaining', '1:30')
 const input = useStorage('draft', '')
 const keepZero = useStorage('keepZero', false)
+const colorTime = useStorage('colorTime', true)
+const colorOps = useStorage('colorOps', true)
 // 手機版第一次打開從換算結果開始，之後記住上次的選擇
 const mobileView = useStorage<MobileView>('mobileView', 'output')
 const history = useHistory()
@@ -193,11 +195,19 @@ function scrollToOcr() {
         <div class="editor-head">
           <h2>換算結果<template v-if="remaining !== null">（{{ formatTime(remaining) }}）</template></h2>
           <span class="actions">
+            <label class="checkbox compact" title="時間上色">
+              <input v-model="colorTime" type="checkbox" />
+              時間上色
+            </label>
+            <label class="checkbox compact" title="跟前一個不同的 O/X、auto on/off 上色">
+              <input v-model="colorOps" type="checkbox" />
+              操作上色
+            </label>
             <button type="button" class="ghost" :disabled="!canSave" @click="openSaveDialog">存紀錄</button>
             <button type="button" class="primary" :disabled="!canSave" @click="copyResult">複製</button>
           </span>
         </div>
-        <HighlightedTimeline :text="result?.text ?? ''" />
+        <HighlightedTimeline :text="result?.text ?? ''" :color-time="colorTime" :color-ops="colorOps" />
       </div>
     </section>
 
