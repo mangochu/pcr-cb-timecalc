@@ -41,6 +41,26 @@ describe('useHistory', () => {
     expect(history.entries.value.map((e) => e.input)).toEqual(['D', 'A', 'C', 'B'])
   })
 
+  it('imports shared entries on top, skipping duplicates', () => {
+    const history = useHistory()
+    history.clear()
+    history.save({ remaining: 59, input: 'A', output: '' })
+    const result = history.importEntries([
+      { title: '新的', remaining: 59, input: '1:30 OOXOO\n0:10 碧>OOOOO' },
+      { title: '重複', remaining: 59, input: 'A' },
+      { title: '', remaining: 45, input: 'A' },
+      { title: '同一包裡重複', remaining: 45, input: 'A' },
+    ])
+    expect(result).toEqual({ added: 2, skipped: 2 })
+    expect(history.entries.value.map((e) => [e.title, e.remaining, e.input])).toEqual([
+      ['新的', 59, '1:30 OOXOO\n0:10 碧>OOOOO'],
+      ['A', 45, 'A'],
+      ['A', 59, 'A'],
+    ])
+    // 換算結果在匯入時重新計算
+    expect(history.entries.value[0].output).toBe('0:59 OOXOO')
+  })
+
   it('falls back to the first line for a new timeline', () => {
     const history = useHistory()
     history.clear()

@@ -1,4 +1,6 @@
 import { useStorage } from './useStorage'
+import { convertTimeline } from '../lib/timeline'
+import type { SharedEntry } from '../lib/share'
 
 export interface HistoryEntry {
   id: string
@@ -11,7 +13,7 @@ export interface HistoryEntry {
 
 type NewEntry = Omit<HistoryEntry, 'id' | 'savedAt' | 'title'> & { title?: string }
 
-const MAX_ENTRIES = 30
+export const MAX_ENTRIES = 30
 
 /** 沒填標題時用時間軸的第一行 */
 export function defaultTitle(input: string): string {
@@ -41,6 +43,26 @@ export function useHistory() {
     }
   }
 
+  function has(item: Pick<SharedEntry, 'input' | 'remaining'>): boolean {
+    return entries.value.some((e) => e.input === item.input && e.remaining === item.remaining)
+  }
+
+  /** 匯入別人分享的紀錄：已經有的（同一份軸＋同秒數）略過，新的依原順序放最上面 */
+  function importEntries(items: SharedEntry[]): { added: number; skipped: number } {
+    const fresh = items.filter((item, i) => !has(item) && items.findIndex((x) => x.input === item.input && x.remaining === item.remaining) === i)
+    const now = Date.now()
+    const added: HistoryEntry[] = fresh.map((item) => ({
+      id: crypto.randomUUID(),
+      savedAt: now,
+      title: item.title || defaultTitle(item.input),
+      remaining: item.remaining,
+      input: item.input,
+      output: convertTimeline(item.input, { remaining: item.remaining }).text,
+    }))
+    entries.value = [...added, ...entries.value].slice(0, MAX_ENTRIES)
+    return { added: added.length, skipped: items.length - added.length }
+  }
+
   function remove(id: string) {
     entries.value = entries.value.filter((e) => e.id !== id)
   }
@@ -49,5 +71,5 @@ export function useHistory() {
     entries.value = []
   }
 
-  return { entries, findTitle, save, remove, clear }
+  return { entries, findTitle, save, has, importEntries, remove, clear }
 }

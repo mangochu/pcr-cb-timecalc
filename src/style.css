@@ -62,7 +62,7 @@ body {
   position: fixed;
   inset: 0 auto 0 0;
   z-index: 50;
-  width: min(380px, 88vw);
+  width: min(420px, 92vw);
   overflow-y: auto;
   padding: 12px;
   background: var(--bg);
@@ -97,8 +97,12 @@ button.danger:hover:not(:disabled) {
   background: var(--danger-soft);
 }
 
-.clear-all {
-  justify-self: start;
+/* 紀錄最下面：匯出／匯入在左，全部清除在右 */
+.history-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
   margin-top: 12px;
 }
 
@@ -398,13 +402,73 @@ select {
   background: rgb(0 0 0 / 0.45);
 }
 
-.dialog form {
+.dialog form,
+.dialog-body {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
+}
+
+.dialog.wide {
+  width: min(560px, calc(100vw - 32px));
+}
+
+/* 匯出時勾選紀錄、匯入時預覽 */
+.pick-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: -8px;
+}
+
+.pick-list {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.pick-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 12px;
+}
+
+.pick-list .checkbox {
+  padding: 0;
+  width: 100%;
+  gap: 10px;
+}
+
+.pick-list li.exists {
+  opacity: 0.55;
+}
+
+.pick-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.code-box {
+  min-height: 110px;
+  font-size: 0.8rem;
+  word-break: break-all;
+}
+
+.dialog .warning {
+  margin: 0;
 }
 
 .dialog-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
 }
@@ -532,6 +596,8 @@ textarea {
   border-radius: var(--radius);
   padding: 16px;
   display: grid;
+  /* 不讓內容（例如很長的紀錄列）把欄位撐出框外 */
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
 }
 
@@ -675,14 +741,31 @@ kbd {
   margin: 0;
   padding: 0;
   display: grid;
+  /* 欄寬跟著抽屜，不被很長的標題撐開（標題會用 … 截斷） */
+  grid-template-columns: minmax(0, 1fr);
   gap: 6px;
 }
 
 .history li {
   display: flex;
+  min-width: 0;
   gap: 6px;
   background: var(--surface);
   border-radius: 8px;
+}
+
+/* 重新命名中：外觀跟原本那列一樣，標題換成輸入框 */
+.history-main.editing {
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 2px 4px 2px 14px;
+  background: var(--surface);
+}
+
+.rename-input {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 8px;
 }
 
 /* 拖曳把手：按住才能拖，不會跟頁面捲動搶手勢 */
@@ -719,8 +802,14 @@ kbd {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  padding: 6px 10px;
   text-align: left;
+}
+
+/* 紀錄列的 ✎ ✕ 小一點，把空間留給標題 */
+.history .icon {
+  padding: 6px 8px;
 }
 
 .history-time {
@@ -739,8 +828,15 @@ kbd {
 
 .history-date {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   white-space: nowrap;
+}
+
+/* 抽屜太窄時不顯示日期，優先保留標題 */
+@media (max-width: 400px) {
+  .history-date {
+    display: none;
+  }
 }
 
 .toast {

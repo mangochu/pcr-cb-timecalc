@@ -5,6 +5,9 @@ import { defaultTitle, useHistory, type HistoryEntry } from './composables/useHi
 import { convertTimeline, formatTime, parseTime, FULL_TIME } from './lib/timeline'
 import OcrPanel from './components/OcrPanel.vue'
 import HistoryPanel from './components/HistoryPanel.vue'
+import ExportDialog from './components/ExportDialog.vue'
+import ImportDialog from './components/ImportDialog.vue'
+import type { SharedEntry } from './lib/share'
 import HighlightedTimeline from './components/HighlightedTimeline.vue'
 import type { OcrPanelState } from './ocr/protocol'
 
@@ -104,6 +107,14 @@ function confirmSave() {
   showToast('已存入紀錄')
 }
 
+const exportDialog = ref<InstanceType<typeof ExportDialog>>()
+const importDialog = ref<InstanceType<typeof ImportDialog>>()
+
+function onImport(items: SharedEntry[]) {
+  const { added, skipped } = history.importEntries(items)
+  showToast(skipped ? `已匯入 ${added} 筆，略過 ${skipped} 筆已存在的紀錄` : `已匯入 ${added} 筆紀錄`)
+}
+
 function loadEntry(entry: HistoryEntry) {
   input.value = entry.input
   remainingText.value = formatTime(entry.remaining)
@@ -123,7 +134,14 @@ function scrollToOcr() {
 
 <template>
   <aside class="drawer" :class="{ open: drawerOpen }" aria-label="近期紀錄" :inert="!drawerOpen ? true : undefined">
-    <HistoryPanel v-model:entries="historyEntries" @load="loadEntry" @remove="history.remove" @clear="history.clear">
+    <HistoryPanel
+      v-model:entries="historyEntries"
+      @load="loadEntry"
+      @remove="history.remove"
+      @clear="history.clear"
+      @export="exportDialog?.open()"
+      @import="importDialog?.open()"
+    >
       <template #actions>
         <button
           ref="drawerClose"
@@ -268,6 +286,9 @@ function scrollToOcr() {
 
     <OcrPanel ref="ocrPanel" v-model:state="ocrState" @text="onOcrText" />
   </main>
+
+  <ExportDialog ref="exportDialog" :entries="historyEntries" @toast="showToast" />
+  <ImportDialog ref="importDialog" :count="historyEntries.length" :has="history.has" @import="onImport" />
 
   <dialog ref="saveDialog" class="dialog" aria-labelledby="save-dialog-title">
     <form method="dialog" @submit="confirmSave">
