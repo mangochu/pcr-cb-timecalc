@@ -758,7 +758,7 @@ kbd {
 .history-main.editing {
   border: 1px solid var(--accent);
   border-radius: 8px;
-  padding: 2px 4px 2px 14px;
+  padding: 4px 6px 4px 10px;
   background: var(--surface);
 }
 
@@ -797,14 +797,23 @@ kbd {
   outline-offset: -2px;
 }
 
+/* 每筆兩行：上面存檔時間（小字），下面秒數＋名稱 */
 .history-main {
   flex: 1;
   min-width: 0;
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
   padding: 6px 10px;
   text-align: left;
+}
+
+.history-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 /* 紀錄列的 ✎ ✕ 小一點，把空間留給標題 */
@@ -828,15 +837,9 @@ kbd {
 
 .history-date {
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  line-height: 1.3;
   white-space: nowrap;
-}
-
-/* 抽屜太窄時不顯示日期，優先保留標題 */
-@media (max-width: 400px) {
-  .history-date {
-    display: none;
-  }
 }
 
 .toast {

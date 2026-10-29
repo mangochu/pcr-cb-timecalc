@@ -97,23 +97,29 @@ async function focusRenameButton(id: string) {
           </svg>
         </button>
         <div v-if="editingId === e.id" class="history-main editing">
-          <span class="history-time">{{ formatTime(e.remaining) }}</span>
-          <input
-            ref="renameInput"
-            v-model="editTitle"
-            class="rename-input"
-            :aria-label="`重新命名 ${e.title}`"
-            placeholder="留空會用時間軸第一行"
-            maxlength="100"
-            @keydown.enter.prevent="commitRename"
-            @keydown.esc.stop.prevent="cancelRename"
-            @blur="commitRename"
-          />
-        </div>
-        <button v-else type="button" class="history-main" @click="emit('load', e)">
-          <span class="history-time">{{ formatTime(e.remaining) }}</span>
-          <span class="history-title">{{ e.title || '（未命名）' }}</span>
           <span class="history-date">{{ dateFormat.format(e.savedAt) }}</span>
+          <span class="history-line">
+            <span class="history-time">{{ formatTime(e.remaining) }}</span>
+            <input
+              ref="renameInput"
+              v-model="editTitle"
+              class="rename-input"
+              :aria-label="`重新命名 ${e.title}`"
+              placeholder="留空會用時間軸第一行"
+              maxlength="100"
+              @keydown.enter.prevent="commitRename"
+              @keydown.esc.stop.prevent="cancelRename"
+              @blur="commitRename"
+            />
+          </span>
+        </div>
+        <!-- 兩行：上面是存檔時間，下面是秒數＋名稱 -->
+        <button v-else type="button" class="history-main" @click="emit('load', e)">
+          <span class="history-date">{{ dateFormat.format(e.savedAt) }}</span>
+          <span class="history-line">
+            <span class="history-time">{{ formatTime(e.remaining) }}</span>
+            <span class="history-title">{{ e.title || '（未命名）' }}</span>
+          </span>
         </button>
         <button
           type="button"
