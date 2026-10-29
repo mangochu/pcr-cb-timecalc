@@ -1,0 +1,3 @@
+allowBuilds:
+  # 只是安裝後的版本檢查，不需要執行
+  protobufjs: false
