@@ -9,6 +9,8 @@
   --accent-text: #ffffff;
   --accent-soft: #e7ecff;
   --danger: #c92a2a;
+  --warn-bg: #fff4db;
+  --warn-border: #f0c36d;
   --radius: 10px;
   --mono: ui-monospace, 'Cascadia Mono', 'Consolas', 'Noto Sans Mono CJK TC', monospace;
   color-scheme: light dark;
@@ -26,6 +28,8 @@
     --accent-text: #0d1020;
     --accent-soft: #252c48;
     --danger: #ff8787;
+    --warn-bg: #3a2f17;
+    --warn-border: #7a5d1e;
   }
 }
 
@@ -371,6 +375,38 @@ kbd {
 
 .ocr-text textarea {
   min-height: 320px;
+}
+
+.warning {
+  justify-self: stretch;
+  border: 1px solid var(--warn-border);
+  background: var(--warn-bg);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+}
+
+.warning p {
+  margin: 0 0 4px;
+}
+
+.warning ul {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  display: grid;
+  gap: 2px;
+}
+
+.warning-line {
+  color: var(--muted);
+  margin-right: 8px;
+  white-space: nowrap;
+}
+
+.warning code {
+  font-family: var(--mono);
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 760px) {

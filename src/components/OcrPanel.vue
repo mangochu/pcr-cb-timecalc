@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useOcr } from '../ocr/useOcr'
 import { MODEL_TIERS, type ModelTier } from '../ocr/protocol'
-import { normalizeOcrText } from '../lib/ocrNormalize'
+import { findSuspiciousLines, normalizeOcrText } from '../lib/ocrNormalize'
 import { useStorage } from '../composables/useStorage'
 
 const emit = defineEmits<{ text: [text: string, mode: 'replace' | 'append'] }>()
@@ -23,6 +23,7 @@ const text = computed({
   get: () => editedText.value ?? (normalize.value ? normalizeOcrText(rawText.value) : rawText.value),
   set: (v: string) => (editedText.value = v),
 })
+const suspicious = computed(() => findSuspiciousLines(text.value))
 const statusText = computed(() => {
   if (!busy.value) return ''
   const n = `（${progress.value.done + 1}/${progress.value.total}）`
@@ -121,6 +122,14 @@ onBeforeUnmount(() => {
       </div>
       <div class="ocr-text">
         <textarea v-model="text" spellcheck="false" placeholder="辨識結果會出現在這裡，可以先手動修正再放入左側" />
+        <div v-if="suspicious.length" class="warning" role="note">
+          <p>以下幾行的 O/X 不是 5 個，可能有字沒認到，請對照截圖修正：</p>
+          <ul>
+            <li v-for="s in suspicious" :key="s.line">
+              <span class="warning-line">第 {{ s.line }} 行</span><code>{{ s.text }}</code>
+            </li>
+          </ul>
+        </div>
         <span class="actions">
           <button type="button" class="ghost" :disabled="!text.trim()" @click="emit('text', text, 'append')">附加到左側</button>
           <button type="button" class="primary" :disabled="!text.trim()" @click="emit('text', text, 'replace')">取代左側內容</button>

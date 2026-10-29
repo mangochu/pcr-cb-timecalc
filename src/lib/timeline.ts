@@ -1,10 +1,11 @@
 /** 戰隊戰完整一刀的秒數（1:30） */
 export const FULL_TIME = 90
 
-// 行首的時間，例如 "1:18 涅妃>OOOOO"；同時接受全形冒號
-const TIME_LINE_RE = /^(\s*)(\d{1,2})[:：](\d{2})(?!\d)/
-// 沒有時間、接續上一個時間點的行，例如 ">眞穗>OOXOO"
-const CONTINUATION_RE = /^\s*[>＞]/
+// 行首的時間，例如 "1:18 涅妃>OOOOO"；同時接受全形冒號。
+// 也接受區間 "0:18-17"、"0:18~0:17"（第 4～6 組是區間的分隔符號、分、秒）
+const TIME_LINE_RE = /^(\s*)(\d{1,2})[:：](\d{2})(?:([ \t]*[-~～][ \t]*)(?:(\d{1,2})[:：])?(\d{2}))?(?!\d)/
+// 沒有時間、接續上一個時間點的行，例如 ">眞穗>OOXOO"、"→公雪XOOXO"
+const CONTINUATION_RE = /^\s*(?:[>＞→⇒➡]|->)/
 
 /** 解析 "0:59"、"0：59" 或 "59" 為秒數，格式不對時回傳 null */
 export function parseTime(text: string): number | null {
@@ -51,13 +52,25 @@ export function convertTimeline(input: string, { remaining, keepZero = false }: 
     const m = line.match(TIME_LINE_RE)
     if (m && Number(m[3]) < 60) {
       const t = Number(m[2]) * 60 + Number(m[3]) - offset
-      dropping = keepZero ? t < 0 : t <= 0
+      const expired = (sec: number) => (keepZero ? sec < 0 : sec <= 0)
+      dropping = expired(t)
       if (dropping) {
         dropped++
         continue
       }
       kept++
-      out.push(m[1] + formatTime(t) + line.slice(m[0].length))
+      let range = ''
+      if (m[6] !== undefined) {
+        // 區間結尾只寫秒數時跟開頭同一分；秒數比開頭大代表跨到前一分（"1:02-58" = 1:02～0:58）
+        const endMin = m[5] !== undefined ? Number(m[5]) : Number(m[6]) > Number(m[3]) ? Number(m[2]) - 1 : Number(m[2])
+        const end = endMin * 60 + Number(m[6]) - offset
+        // 結尾已經來不及就只留開頭
+        if (!expired(end)) {
+          const sameMinute = m[5] === undefined && Math.floor(end / 60) === Math.floor(t / 60)
+          range = m[4] + (sameMinute ? String(end % 60).padStart(2, '0') : formatTime(end))
+        }
+      }
+      out.push(m[1] + formatTime(t) + range + line.slice(m[0].length))
     } else if (CONTINUATION_RE.test(line)) {
       if (!dropping) out.push(line)
     } else {
