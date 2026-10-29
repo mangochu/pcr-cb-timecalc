@@ -1,4 +1,5 @@
 // OCR 常見誤判修正：把辨識結果整理成時間軸格式
+import { classifyLines } from './timeline'
 
 const O_CHARS = 'O0o○〇◯'
 const X_CHARS = 'Xx×χ✕✖'
@@ -76,14 +77,15 @@ function splitRun(run: string, offset: number, whole: string) {
   return { head, body, tail, prev: head ? head[head.length - 1] : (whole[offset - 1] ?? '') }
 }
 
-function convertSymbols(body: string, prev: string): string {
+function convertSymbols(body: string, prev: string, inTimeline: boolean): string {
   const symbols = body.replace(/ /g, '')
   if (symbols.length !== PARTY_SIZE) {
     // 數量不對代表 OCR 漏字或多字，不猜位置，只統一明確的符號，留給使用者對照截圖
     return body.replace(UNAMBIGUOUS_RE, (c) => ('○〇◯'.includes(c) ? 'O' : 'X'))
   }
-  // 全是 0 或全是橫線時，只有緊接在 > 或空白後面才轉換，避免誤改數值或分隔線
-  if (AMBIGUOUS_RUN_RE.test(symbols) && !/[>\s]/.test(prev)) return body
+  // 全是 0 或全是橫線時可能是數值或分隔線：時間軸區段內一律當成 O/X（"【00000】"），
+  // 區段外只有緊接在 > 或空白後面才轉換
+  if (AMBIGUOUS_RUN_RE.test(symbols) && !inTimeline && !/[>\s]/.test(prev)) return body
   return [...symbols].map((c) => (O_CHARS.includes(c) ? 'O' : 'X')).join('')
 }
 
@@ -105,19 +107,20 @@ function fixAuto(s: string): string {
   return s.replace(AUTO_RE, (_, a: string, state: string) => `${a}uto ${state.toLowerCase().replace('0', 'o')}`)
 }
 
-function normalizeLine(line: string): string {
-  // auto 要先修好，O/X 才認得出黏在後面的 "OXXOOAulo on"
-  const s = fixAuto(fixTime(toHalfWidth(line).trimEnd())).replace(SYMBOL_RUN_RE, (run: string, offset: number, whole: string) => {
+function convertLine(line: string, inTimeline: boolean): string {
+  const s = line.replace(SYMBOL_RUN_RE, (run: string, offset: number, whole: string) => {
     const { head, body, tail, prev } = splitRun(run, offset, whole)
-    return head + convertSymbols(body, prev) + tail
+    return head + convertSymbols(body, prev, inTimeline) + tail
   })
   return tidySpacing(s)
 }
 
 export function normalizeOcrText(text: string): string {
-  return text
-    .split(/\r?\n/)
-    .map(normalizeLine)
+  // 先修好時間與 auto（O/X 才認得出黏在後面的 "OXXOOAulo on"），才能判斷時間軸區段
+  const lines = text.split(/\r?\n/).map((line) => fixAuto(fixTime(toHalfWidth(line).trimEnd())))
+  const kinds = classifyLines(lines)
+  return lines
+    .map((line, i) => convertLine(line, kinds[i] !== 'other'))
     .filter((line) => line.trim() !== '')
     .join('\n')
 }

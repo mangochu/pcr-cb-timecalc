@@ -1,4 +1,4 @@
-import { isContinuationLine, TIME_LINE_RE } from './timeline'
+import { classifyLines, TIME_LINE_RE } from './timeline'
 
 export type Token =
   | { type: 'text'; text: string }
@@ -16,26 +16,27 @@ const OPERATION_RE = new RegExp(`(${OX_SOURCE})|${AUTO_SOURCE}`, 'g')
 
 /**
  * 把時間軸切成上色用的 token：行首時間、操作（O/X）、auto on/off、其他文字。
- * 只有時間行與接續行上的 O/X 與 auto 算操作，依序跟前一次比對差異；
- * 說明行（例如「全自動打法:OOXXX」）不上色也不參與比對。
+ * 只有主要時間軸區段內的 O/X 與 auto 算操作，依序跟前一次比對差異；
+ * 區段前後的說明（例如「全自動打法:OOXXX」）不上色也不參與比對。
  */
 export function highlightTimeline(text: string): Token[][] {
   let prev: string | null = null
   let prevAuto: string | null = null
+  const lines = text.split(/\r?\n/)
+  const kinds = classifyLines(lines)
 
-  return text.split(/\r?\n/).map((line, i, lines) => {
+  return lines.map((line, i) => {
     const tokens: Token[] = []
     let rest = line
 
     const m = line.match(TIME_LINE_RE)
-    const isTimeLine = m !== null && Number(m[3]) < 60
-    if (isTimeLine) {
+    if (m && kinds[i] === 'time') {
       if (m[1]) tokens.push({ type: 'text', text: m[1] })
       tokens.push({ type: 'time', text: m[0].slice(m[1].length) })
       rest = line.slice(m[0].length)
     }
 
-    if (!isTimeLine && !isContinuationLine(line, lines[i - 1])) {
+    if (kinds[i] === 'other') {
       if (rest) tokens.push({ type: 'text', text: rest })
       return tokens
     }

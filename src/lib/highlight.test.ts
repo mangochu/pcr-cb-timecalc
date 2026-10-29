@@ -88,6 +88,29 @@ XXXOO
     ])
   })
 
+  it('treats every line inside the timeline section as an operation line', () => {
+    const text = `CR:15/0/15/15/0
+1:30 auto on
+【 OXOXO 】
+1:00 黑貓【 OXXOO 】
+0:45 帆希 【 XOOOO 】
+>厄里斯【 XXOOO 】
+0:14 帆希【 OOXOX 】
+全自動打法: OXOXO
+P.S.這組跟另一組闇法傷害差不多`
+    expect(show(highlightTimeline(text))).toEqual([
+      'CR:15/0/15/15/0',
+      '[1:30] auto *on*',
+      '【 OXOXO 】',
+      '[1:00] 黑貓【 OX*X**O*O 】',
+      '[0:45] 帆希 【 *X**O**O*OO 】',
+      '>厄里斯【 X*X*OOO 】',
+      '[0:14] 帆希【 *O**O**X*O*X* 】',
+      '全自動打法: OXOXO',
+      'P.S.這組跟另一組闇法傷害差不多',
+    ])
+  })
+
   it('handles ranges, → continuation and O/X glued to Auto', () => {
     const text = `0:18-17 涅妃 → OXXOOAuto off
 →公雪 OXXOX`

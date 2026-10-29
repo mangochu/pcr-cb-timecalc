@@ -110,6 +110,31 @@ XXXOO
     expect(convertTimeline(input, { remaining: 80 }).text).toContain('0:08 真步>auto on\n涅妃>auto off>真步\n>OOXXO >碧>OOOOO')
   })
 
+  it('drops any line inside the timeline section with its time point', () => {
+    const input = `CR:15/0/15/15/0
+1:30 auto on
+【 OXOXO 】
+0:45 帆希 【 XOOOO 】
+※這裡要等 boss 動作
+>厄里斯【 XXOOO 】
+0:40 黑貓 【 OXOOO 】
+全自動打法: OXOXO
+傷害約4.1億`
+    expect(convertTimeline(input, { remaining: 50 }).text).toBe(`CR:15/0/15/15/0
+0:50 auto on
+【 OXOXO 】
+0:05 帆希 【 XOOOO 】
+※這裡要等 boss 動作
+>厄里斯【 XXOOO 】
+全自動打法: OXOXO
+傷害約4.1億`)
+    expect(convertTimeline(input, { remaining: 44 }).text).toBe(`CR:15/0/15/15/0
+0:44 auto on
+【 OXOXO 】
+全自動打法: OXOXO
+傷害約4.1億`)
+  })
+
   it('handles 0:00 according to keepZero', () => {
     const input = '0:34 A>OOOOO\n>B>XXXXX'
     expect(convertTimeline(input, { remaining: 56 }).text).toBe('')
@@ -208,6 +233,23 @@ describe('real OCR sample with arrows and Auto', () => {
 0:18-17☆ (蜘蛛唱名時Auto on)
 0:18-17 涅妃 → OXXOO Auto off
 0:08 作碧 → OXOOO Auto on`)
+  })
+})
+
+describe('timeline section', () => {
+  it('converts 00000 to OOOOO only inside the timeline section', () => {
+    const text = normalizeOcrText(`傷害【00000】
+1:30 auto on
+【 OXOXO 】
+0:31 厄里斯【00000】
+全自動打法: OXOXO
+備註【00000】`)
+    expect(text).toBe(`傷害【00000】
+1:30 auto on
+【 OXOXO 】
+0:31 厄里斯【 OOOOO 】
+全自動打法: OXOXO
+備註【00000】`)
   })
 })
 
