@@ -326,4 +326,15 @@ TL:きたいくよ
     expect(normalizeOcrText('傷害約30000萬')).toBe('傷害約30000萬')
     expect(normalizeOcrText('CR:15/15/0/15/3')).toBe('CR:15/15/0/15/3')
   })
+
+  it('keeps the colon-less time style and the 戰鬥開始 line', () => {
+    const text = '戰鬥開始Auto on（xxxoo）\n110 新可 → xoxox\n042 佛涅 → ooxoo\n018-017 灰真 → Auto on'
+    expect(convertTimeline(text, { remaining: 60 }).text).toBe('戰鬥開始Auto on（xxxoo）\n040 新可 → xoxox\n012 佛涅 → ooxoo')
+    expect(convertTimeline('110 新可 → xoxox', { remaining: 90 }).text).toBe('110 新可 → xoxox')
+  })
+
+  it('does not treat other numbers as colon-less times', () => {
+    const r = convertTimeline('500萬傷害\n1:30 OOXOO', { remaining: 60 })
+    expect(r.text).toBe('500萬傷害\n1:00 OOXOO')
+  })
 })

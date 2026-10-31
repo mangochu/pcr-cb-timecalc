@@ -116,4 +116,23 @@ P.S.這組跟另一組闇法傷害差不多`
 →公雪 OXXOX`
     expect(show(highlightTimeline(text))).toEqual(['[0:18-17] 涅妃 → OXXOOAuto *off*', '→公雪 OXXO*X*'])
   })
+
+  it('accepts times without a colon, lowercase o/x and a 戰鬥開始 line', () => {
+    const text = `TP 8.0+
+
+戰鬥開始Auto on（xxxoo）
+
+110 新可 → xoxox（駕碧 on，新可 off）
+    佛涅 → XOXXX，Auto off
+009 駕碧 → oxoxo`
+    expect(show(highlightTimeline(text))).toEqual([
+      'TP 8.0+',
+      '',
+      '戰鬥開始Auto *on*（xxxoo）',
+      '',
+      '[110] 新可 → x*o*xo*x*（駕碧 on，新可 off）',
+      '    佛涅 → XOX*X*X，Auto *off*',
+      '[009] 駕碧 → *o**x**o*x*o*',
+    ])
+  })
 })

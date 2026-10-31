@@ -8,8 +8,8 @@ export type Token =
   /** changed 為 true 代表 auto 狀態跟前一次不同（第一次出現也算） */
   | { type: 'auto'; text: string; changed: boolean }
 
-// 五位角色的 Set 狀態，可以直接黏著 auto（"OOXXOAuto off"）
-const OX_SOURCE = '(?<![A-Za-z0-9])[OX]{5}(?=$|[^A-Za-z0-9]|[Aa][Uu][Tt][Oo])'
+// 五位角色的 Set 狀態，大小寫皆可，可以直接黏著 auto（"OOXXOAuto off"）
+const OX_SOURCE = '(?<![A-Za-z0-9])[OoXx]{5}(?=$|[^A-Za-z0-9]|[Aa][Uu][Tt][Oo])'
 // auto on/off，容許 "autoon"、"Auto.on"、全大寫
 const AUTO_SOURCE = '[Aa][Uu][Tt][Oo][\\s.]*([Oo][Nn]|[Oo][Ff][Ff])(?![A-Za-z])'
 const OPERATION_RE = new RegExp(`(${OX_SOURCE})|${AUTO_SOURCE}`, 'g')
@@ -47,8 +47,9 @@ export function highlightTimeline(text: string): Token[][] {
       if (om.index > last) tokens.push({ type: 'text', text: rest.slice(last, om.index) })
       if (ox) {
         const before = prev
-        tokens.push({ type: 'ox', text: ox, changed: [...ox].map((c, i) => before !== null && c !== before[i]) })
-        prev = ox
+        const state = ox.toUpperCase()
+        tokens.push({ type: 'ox', text: ox, changed: [...state].map((c, i) => before !== null && c !== before[i]) })
+        prev = state
       } else {
         // 只有 on/off 本身上色，"Auto " 當一般文字
         const state = auto.toLowerCase()

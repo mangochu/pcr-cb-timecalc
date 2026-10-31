@@ -1,15 +1,20 @@
 /** 戰隊戰完整一刀的秒數（1:30） */
 export const FULL_TIME = 90
 
-// 行首的時間，例如 "1:18 涅妃>OOOOO"；同時接受全形冒號。
+// 行首的時間，例如 "1:18 涅妃>OOOOO"；同時接受全形冒號，以及省略冒號的三位數 "110"、"042"。
 // 也接受區間 "0:18-17"、"0:18~0:17"（第 4～6 組是區間的分隔符號、分、秒）
-export const TIME_LINE_RE = /^(\s*)(\d{1,2})[:：](\d{2})(?:([ \t]*[-~～][ \t]*)(?:(\d{1,2})[:：])?(\d{2}))?(?!\d)/
+const MINUTE = String.raw`(\d{1,2}(?=[:：])|[01](?=\d{2}(?!\d)))[:：]?`
+export const TIME_LINE_RE = new RegExp(
+  String.raw`^(\s*)${MINUTE}(\d{2})(?:([ \t]*[-~～][ \t]*)(?:${MINUTE})?(\d{2}))?(?!\d)`,
+)
 // 沒有時間、接續上一個時間點的行，例如 ">眞穗>OOXOO"、"→公雪XOOXO"
 const CONTINUATION_RE = /^\s*(?:[>＞→⇒➡]|->)/
 // 換行後的操作：行首就是 O/X（"XXXOO"、"【 OXOXO 】"），或 > → 後面直接接 O/X、auto（"涅妃>OOXXO"、"涅妃>auto off"）
-const OPERATION_LINE_RE = /(?:^|[>＞→⇒➡【\[(（「])\s*(?:[OX]{5}(?=$|[^A-Za-z0-9]|[Aa]uto)|[Aa]uto)/
+const OPERATION_LINE_RE = /(?:^|[>＞→⇒➡【\[(（「])\s*(?:[OoXx]{5}(?=$|[^A-Za-z0-9]|[Aa]uto)|[Aa]uto)/
 // 上一行以 > 或 → 結尾，代表這行是被換行切開的後半段（"0:30 可蘿>OOOOO >"）
 const WRAPPED_RE = /[>＞→⇒➡]\s*$/
+// 第一個時間行之前的開場設定，例如 "戰鬥開始Auto on（xxxoo）"
+const BATTLE_START_RE = /^\s*(?:戰鬥開始|战斗开始|開場|开场|開局|开局)/
 
 /**
  * - time：行首有時間
@@ -29,7 +34,7 @@ function looksLikeContinuation(line: string, prevLine: string): boolean {
 }
 
 /**
- * 找出主要時間軸區段：從第一個時間行到最後一個時間行，
+ * 找出主要時間軸區段：從第一個時間行（或它前面的「戰鬥開始」行）到最後一個時間行，
  * 再加上最後一個時間行後面緊接、看起來像操作的行。區段內沒有時間的行都屬於上一個時間點。
  */
 export function classifyLines(lines: string[]): LineKind[] {
@@ -39,6 +44,12 @@ export function classifyLines(lines: string[]): LineKind[] {
   const kinds: LineKind[] = lines.map((_, i) => (isTime[i] ? 'time' : i > first && i < last ? 'continuation' : 'other'))
   if (first === -1) return kinds
 
+  for (let i = first - 1; i >= 0; i--) {
+    if (BATTLE_START_RE.test(lines[i])) {
+      kinds.fill('continuation', i, first)
+      break
+    }
+  }
   for (let i = last + 1; i < lines.length && looksLikeContinuation(lines[i], lines[i - 1]); i++) {
     kinds[i] = 'continuation'
   }
@@ -99,6 +110,9 @@ export function convertTimeline(input: string, { remaining, keepZero = false }: 
         continue
       }
       kept++
+      // 原本省略冒號（"110"）就照樣輸出 "040"
+      const compact = !/^[:：]/.test(line.slice(m[1].length + m[2].length))
+      const fmt = (sec: number) => (compact ? formatTime(sec).replace(':', '') : formatTime(sec))
       let range = ''
       if (m[6] !== undefined) {
         // 區間結尾只寫秒數時跟開頭同一分；秒數比開頭大代表跨到前一分（"1:02-58" = 1:02～0:58）
@@ -107,10 +121,10 @@ export function convertTimeline(input: string, { remaining, keepZero = false }: 
         // 結尾已經來不及就只留開頭
         if (!expired(end)) {
           const sameMinute = m[5] === undefined && Math.floor(end / 60) === Math.floor(t / 60)
-          range = m[4] + (sameMinute ? String(end % 60).padStart(2, '0') : formatTime(end))
+          range = m[4] + (sameMinute ? String(end % 60).padStart(2, '0') : fmt(end))
         }
       }
-      out.push(m[1] + formatTime(t) + range + line.slice(m[0].length))
+      out.push(m[1] + fmt(t) + range + line.slice(m[0].length))
     } else if (kinds[i] === 'continuation') {
       if (!dropping) out.push(line)
     } else {
